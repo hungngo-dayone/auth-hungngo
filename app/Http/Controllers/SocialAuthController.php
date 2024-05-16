@@ -15,11 +15,11 @@ class SocialAuthController extends Controller
         $service = $request->route()->parameter('service');
 
         try {
-            $socialUser = Socialite::driver('google')->userFromToken($request['token']);
+            $socialUser = Socialite::driver($service)->userFromToken($request['token']);
         } catch (ClientException $e) {
             return response()->json(['error' => 'Invalid credentials provided.'], 401);
         } catch (Throwable $x) {
-            logger()->error('Unable to process social callback because of a Socialite failre', [
+            logger()->error('Unable to process social callback because of a Socialite failure', [
                 'service' => $service ?? null,
                 'error' => $x->getMessage(),
             ]);
@@ -27,10 +27,13 @@ class SocialAuthController extends Controller
             return response()->json(['error' => 'Unable to process request'], 500);
         }
 
-//        dd($socialUser);
-
-        $email = $socialUser->email;
-        $user = $socialUser->user;
+        if ($service == 'google') {
+            $email = $socialUser->email;
+            $user = $socialUser->user;
+        } else {
+            $email = $socialUser->attributes['email'];
+            $user = $socialUser->attributes;
+        }
 
 //        Auth::login($user);
 //        $user = Auth::user();
